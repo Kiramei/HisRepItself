@@ -250,7 +250,7 @@ def normalize_data(data, data_mean, data_std, dim_to_use, actions, one_hot):
 
 
 def normalization_stats(completeData):
-    """"
+    """
     Also borrowed for SRNN code. Computes mean, stdev and dimensions to ignore.
     https://github.com/asheshjain399/RNNexp/blob/srnn/structural_rnn/CRFProblems/H3.6m/processdata.py#L33
 
@@ -307,6 +307,8 @@ def define_actions(action):
 """all methods above are borrowed from https://github.com/una-dinosauria/human-motion-prediction"""
 
 
+# 数据集中的名称
+
 def define_actions_cmu(action):
     """
     Define the list of actions we are using.
@@ -328,6 +330,9 @@ def define_actions_cmu(action):
         return actions
 
     raise (ValueError, "Unrecognized action: %d" % action)
+
+
+# 加载CMU模型、以及CMU3d模型
 
 
 def load_data_cmu(path_to_dataset, actions, input_n, output_n, data_std=0, data_mean=0, is_test=False):
@@ -583,6 +588,13 @@ def expmap2xyz_torch(expmap):
     parent, offset, rotInd, expmapInd = forward_kinematics._some_variables()
     xyz = forward_kinematics.fkl_torch(expmap, parent, offset, rotInd, expmapInd)
     return xyz
+
+
+# 离散余弦变换的函数，返回结果矩阵以及逆矩阵
+'''
+离散余弦变换（DCT）是一种从图像或音频信号中提取特征的强大手段，也是图像处理中经常使用的正交变换。
+用来压缩静帧、图像及其它信号，使其二进制变小，不仅可以显著地提高数据传输速率，而且可以有效地提高图像质量
+'''
 
 
 def get_dct_matrix(N):

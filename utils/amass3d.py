@@ -31,11 +31,11 @@ class Datasets(Dataset):
         self.data_idx = []
         self.joint_used = np.arange(4, 22)
         seq_len = self.in_n + self.out_n
-
+        # 只训练CMU和跑CMU
         amass_splits = [
-            ['CMU', 'MPI_Limits', 'TotalCapture', 'Eyes_Japan_Dataset', 'KIT', 'EKUT', 'TCD_handMocap', 'ACCAD'],
-            ['HumanEva', 'MPI_HDM05', 'SFU', 'MPI_mosh'],
-            ['BioMotionLab_NTroje'],
+            ['CMU'],
+            ['HumanEva'],
+            ['CMU'],
         ]
         # amass_splits = [['BioMotionLab_NTroje'], ['HumanEva'], ['SSM_synced']]
         # amass_splits = [['HumanEva'], ['HumanEva'], ['HumanEva']]

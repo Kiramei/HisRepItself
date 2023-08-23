@@ -8,6 +8,10 @@ import torch
 from torch.nn.parameter import Parameter
 import math
 
+'''
+论文使用到的GCN网络
+'''
+
 
 class GraphConvolution(nn.Module):
     """
@@ -18,22 +22,29 @@ class GraphConvolution(nn.Module):
         super(GraphConvolution, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        # 输入特征作为权重
         self.weight = Parameter(torch.FloatTensor(in_features, out_features))
+        # 创建注意力张量
         self.att = Parameter(torch.FloatTensor(node_n, node_n))
         if bias:
             self.bias = Parameter(torch.FloatTensor(out_features))
         else:
             self.register_parameter('bias', None)
+        # 重置参数
         self.reset_parameters()
 
     def reset_parameters(self):
+        # 均分值
         stdv = 1. / math.sqrt(self.weight.size(1))
+        # 归一化
         self.weight.data.uniform_(-stdv, stdv)
         self.att.data.uniform_(-stdv, stdv)
         if self.bias is not None:
             self.bias.data.uniform_(-stdv, stdv)
 
+    # 前向过程：输入
     def forward(self, input):
+        # 输入和权重做矩阵乘法，作为支持矩阵，并且再次与注意力作乘得到输出
         support = torch.matmul(input, self.weight)
         output = torch.matmul(self.att, support)
         if self.bias is not None:
@@ -51,6 +62,9 @@ class GC_Block(nn.Module):
     def __init__(self, in_features, p_dropout, bias=True, node_n=48):
         """
         Define a residual block of GCN
+          =》残差块
+          基本原理：建立图神经卷积层以及归一化层，分为clone两个部分，然后线性组织模型
+          结构：gc1 -> bn1 -> tanh -> dropout -> gc2 -> bn2 -> tanh -> dropout -> Fusion
         """
         super(GC_Block, self).__init__()
         self.in_features = in_features
@@ -61,7 +75,7 @@ class GC_Block(nn.Module):
 
         self.gc2 = GraphConvolution(in_features, in_features, node_n=node_n, bias=bias)
         self.bn2 = nn.BatchNorm1d(node_n * in_features)
-
+        # 防止过拟合的dropout
         self.do = nn.Dropout(p_dropout)
         self.act_f = nn.Tanh()
 
@@ -102,11 +116,12 @@ class GCN(nn.Module):
         self.bn1 = nn.BatchNorm1d(node_n * hidden_feature)
 
         self.gcbs = []
+        # 迭代将所有点和边加入图神经网络
         for i in range(num_stage):
             self.gcbs.append(GC_Block(hidden_feature, p_dropout=p_dropout, node_n=node_n))
-
+        # 组成列表
         self.gcbs = nn.ModuleList(self.gcbs)
-
+        # 将所有点的关系连上一个层
         self.gc7 = GraphConvolution(hidden_feature, input_feature, node_n=node_n)
 
         self.do = nn.Dropout(p_dropout)

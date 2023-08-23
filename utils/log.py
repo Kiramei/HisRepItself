@@ -8,6 +8,8 @@ import torch
 import pandas as pd
 import numpy as np
 
+# 输出日志文件，模型训练的损失等
+
 
 def save_csv_log(opt, head, value, is_create=False, file_name='test'):
     if len(value.shape) < 2:
@@ -21,6 +23,8 @@ def save_csv_log(opt, head, value, is_create=False, file_name='test'):
             df.to_csv(f, header=False, index=False)
 
 
+# 保存两个模型，参数最好的模型和训练最久的模型
+
 def save_ckpt(state, is_best=True, file_name=['ckpt_best.pth.tar', 'ckpt_last.pth.tar'], opt=None):
     file_path = os.path.join(opt.ckpt, file_name[1])
     torch.save(state, file_path)
@@ -28,6 +32,8 @@ def save_ckpt(state, is_best=True, file_name=['ckpt_best.pth.tar', 'ckpt_last.pt
         file_path = os.path.join(opt.ckpt, file_name[0])
         torch.save(state, file_path)
 
+
+# 保存选项参数
 
 def save_options(opt):
     with open(opt.ckpt + '/option.json', 'w') as f:

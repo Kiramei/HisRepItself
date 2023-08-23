@@ -7,6 +7,8 @@ from pprint import pprint
 from utils import log
 import sys
 
+# 选项，即在程序当中的参数定义
+
 
 class Options:
     def __init__(self):

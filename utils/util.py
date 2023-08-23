@@ -22,6 +22,8 @@ def orth_project(cam, pts):
     return torch.mul(s, pts[:, :, :2] + T)
 
 
+# unused
+
 def opt_cam(x, x_target):
     """
     :param x: N K 3 or  N K 2
@@ -53,6 +55,13 @@ def opt_cam(x, x_target):
     trans = mu2.squeeze(1) / scale - mu1.squeeze(1)
     opt_cam = torch.cat([scale, trans], dim=1)
     return opt_cam
+
+
+# 离散余弦变换的函数，返回结果矩阵以及逆矩阵
+'''
+离散余弦变换（DCT）是一种从图像或音频信号中提取特征的强大手段，也是图像处理中经常使用的正交变换。
+用来压缩静帧、图像及其它信号，使其二进制变小，不仅可以显著地提高数据传输速率，而且可以有效地提高图像质量
+'''
 
 
 def get_dct_matrix(N):

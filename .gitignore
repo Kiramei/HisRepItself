@@ -130,3 +130,8 @@ dmypy.json
 
 .idea/
 datasets/
+checkpoint/
+main_amass_3d.py
+main_amass_3d_eval.py
+checkpoint/pretrained/h36m_3d_in50_out10_dctn20/test_pre_action.csv
+checkpoint/pretrained/h36m_ang_in50_out10_dctn20/test_pre_action_256_seq.csv
