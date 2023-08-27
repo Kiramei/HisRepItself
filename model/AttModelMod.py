@@ -50,6 +50,11 @@ class AttModel(Module):
                            num_stage=num_stage,
                            node_n=in_features)
 
+        # (32 * 66, 256) can't be multiplied with (40 * 256)
+        # it should be batch_size * input feature
+        # self.mlp = torch.nn.Sequential(torch.nn.Linear(in_features=(dct_n * 2), out_features=d_model),
+        #                                torch.nn.ReLU(),
+        #                                torch.nn.Linear(in_features=(dct_n * 2), out_features=d_model))
         self.mlp = torch.nn.Sequential(torch.nn.Linear(in_features=(dct_n * 2), out_features=d_model),
                                        torch.nn.ReLU(),
                                        torch.nn.Linear(in_features=d_model, out_features=(dct_n * 2)))
@@ -84,8 +89,7 @@ class AttModel(Module):
         vn = input_n - self.kernel_size - output_n + 1  # 50 - 10 - 10 + 1 = 31
         vl = self.kernel_size + output_n  # 10 + 10 = 20
         # idx : (31,20)
-        idx = np.expand_dims(np.arange(vl), axis=0) + \
-              np.expand_dims(np.arange(vn), axis=1)
+        idx = np.expand_dims(np.arange(vl), axis=0) + np.expand_dims(np.arange(vn), axis=1)
         # [32,50,66] => [32,(31,20),66] => [32*31,20,66]
         src_value_tmp = src_tmp[:, idx].clone().reshape(
             [bs * vn, vl, -1])
@@ -113,7 +117,7 @@ class AttModel(Module):
             # [32,1,31] / [32,1,1] = [32,1,31]
             att_tmp = score_tmp / (torch.sum(score_tmp, dim=2, keepdim=True))
             # 注意力回乘,得到注意力
-            # [32,66,20]
+            # [32,66,20
             dct_att_tmp = torch.matmul(att_tmp, src_value_tmp)[:, 0].reshape(
                 [bs, -1, dct_n])
 

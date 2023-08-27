@@ -15,7 +15,7 @@ import numpy as np
 
 class AttModel(Module):
 
-    def __init__(self, in_features=48, kernel_size=5, d_model=512, num_stage=2, dct_n=10):
+    def __init__(self, in_features=48, kernel_size=5, d_model=512, num_stage=2, dct_n=10, dropout=0.3):
         super(AttModel, self).__init__()
         # 卷积核与模型
         self.kernel_size = kernel_size
@@ -50,19 +50,11 @@ class AttModel(Module):
                            num_stage=num_stage,
                            node_n=in_features)
 
-        # (32 * 66, 256) can't be multiplied with (40 * 256)
-        # it should be batch_size * input feature
-        # self.mlp = torch.nn.Sequential(torch.nn.Linear(in_features=(dct_n * 2), out_features=d_model),
-        #                                torch.nn.ReLU(),
-        #                                torch.nn.Linear(in_features=(dct_n * 2), out_features=d_model))
-        self.mlp = torch.nn.Sequential(torch.nn.Linear(in_features=(dct_n * 2), out_features=d_model),
-                                       torch.nn.ReLU(),
-                                       torch.nn.Linear(in_features=d_model, out_features=(dct_n * 2)))
-
-    '''
-    前向过程:
-        Decoder -> Attention -> GCN -> Encoder
-    '''
+        self.mlp = nn.Sequential(nn.Linear(in_features=(dct_n * 2), out_features=d_model*2),
+                                 nn.ReLU(),
+                                 nn.Linear(in_features=d_model*2, out_features=d_model),
+                                 nn.ReLU(),
+                                 nn.Linear(in_features=d_model, out_features=(dct_n * 2)))
 
     def forward(self, src, output_n=25, input_n=50, itera=1):
         """
@@ -83,8 +75,8 @@ class AttModel(Module):
         src_query_tmp = src_tmp.transpose(1, 2)[:, :, -self.kernel_size:].clone()  # [32,66,10]
         # 获取DCT变化后的矩阵以及其逆矩阵,转移cuda
         dct_m, idct_m = util.get_dct_matrix(self.kernel_size + output_n)  # [20,20] [20,20]
-        dct_m = torch.from_numpy(dct_m).float().cuda()  # [66,66]
-        idct_m = torch.from_numpy(idct_m).float().cuda()  # [66,66]
+        dct_m = torch.from_numpy(dct_m).float().cuda()  # [20,20] (dct_n, dct_n)
+        idct_m = torch.from_numpy(idct_m).float().cuda()  # [20,20] (dct_n, dct_n)
 
         vn = input_n - self.kernel_size - output_n + 1  # 50 - 10 - 10 + 1 = 31
         vl = self.kernel_size + output_n  # 10 + 10 = 20
@@ -120,10 +112,9 @@ class AttModel(Module):
             # [32,66,20]
             dct_att_tmp = torch.matmul(att_tmp, src_value_tmp)[:, 0].reshape(
                 [bs, -1, dct_n])
-
             # 抽取向量提供GCN的Input
             # [32,20,66]，抽取最后一帧，拓展为11帧，为query
-            input_gcn = src_tmp[:, idx]
+            input_query = src_tmp[:, idx]
             '''
             代码使用 DCT 矩阵 dct_m 对输入张量 input_gcn 进行变换，并将其形状变为 (bs, vn, dct_n)。
             其中 dct_n 表示 DCT 变换后的特征维度数量，vn 表示需要用到的时间步数量。
@@ -131,35 +122,35 @@ class AttModel(Module):
             其中 att_size 表示注意力向量的长度。
             '''
             # [32,20,66] * [1,20,20] => [32,20,66] => [32,66,20]
-            dct_in_tmp = torch.matmul(dct_m[:dct_n].unsqueeze(dim=0), input_gcn).transpose(1, 2)
+            gcn_in_tmp = torch.matmul(dct_m[:dct_n].unsqueeze(dim=0), input_query).transpose(1, 2)
             # => [32,66,20+20] => [32,66,40]
-
             # 这里作gcn
-            dct_gcn_out_tmp = self.gcn(dct_in_tmp)
-
-            dct_in_tmp = torch.cat([dct_gcn_out_tmp, dct_att_tmp], dim=-1)
+            gcn_out_tmp = self.gcn(gcn_in_tmp)
+            # 在mlp层前拼接GCN输出与注意力
+            mlp_in_tmp = torch.cat([gcn_out_tmp, dct_att_tmp], dim=-1)
             # 加入图神经网路计算
             # => [32,66,40]
             # dct_out_tmp = self.gcn(dct_in_tmp)
 
-            # 这里换成MLP
-            dct_out_tmp = self.mlp(dct_in_tmp)
+            # 这里换成MLP，不改变维度
+            mlp_out_tmp = self.mlp(mlp_in_tmp)
 
             # 代码将 dct_out_tmp 中的前 dct_n 个特征维度取出，并通过 IDCT 矩阵 idct_m 进行变换，
             # 得到形状为 (bs, vn, output_n) 的张量 out_gcn。其中 output_n 表示 GCN 操作的输出维度数量。
             # [32,66,20] * [1,20,20] => [32,66,20] => [32,20,66]
-            out_gcn = torch.matmul(idct_m[:, :dct_n].unsqueeze(dim=0),
-                                   dct_out_tmp[:, :, :dct_n].transpose(1, 2))
+            out_mlp = torch.matmul(idct_m[:, :dct_n].unsqueeze(dim=0),
+                                   mlp_out_tmp[:, :, :dct_n].transpose(1, 2))
 
             # 添加输出 [32,20,66] => [32,20,1,66]
-            outputs.append(out_gcn.unsqueeze(2))
+            outputs.append(out_mlp.unsqueeze(2))
 
             # 在迭代次数大于1时,将Key-value矩阵更新,将操作后的值还原回矩阵当中,相当于重新encode
             if itera > 1:
-                # update key-value query
-                out_tmp = out_gcn.clone()[:, 0 - output_n:]
+                # 取最后output_n帧
+                out_tmp = out_mlp.clone()[:, 0 - output_n:]
+                # 将原src与输出帧拼接
                 src_tmp = torch.cat([src_tmp, out_tmp], dim=1)
-
+                # 算个数
                 vn = 1 - 2 * self.kernel_size - output_n
                 vl = self.kernel_size + output_n
                 idx_dct = np.expand_dims(np.arange(vl), axis=0) + \
@@ -179,6 +170,8 @@ class AttModel(Module):
                 src_query_tmp = src_tmp[:, -self.kernel_size:].transpose(1, 2)
         # [32,20,1,66] => [32,20,66]
         outputs = torch.cat(outputs, dim=2)
+        # outputs = src_tmp[:, -35:, :].unsqueeze(2)
+
         return outputs
 
 

@@ -1,3 +1,5 @@
+import math
+
 from utils import h36motion3d as datasets
 from model import AttModel
 from utils.opt import Options
@@ -160,7 +162,7 @@ def run_model(net_pred, optimizer=None, is_train=0, data_loader=None, epo=1, opt
 
         p3d_h36 = p3d_h36.reshape([-1, in_n + out_n, 32, 3])
 
-        p3d_out_all = p3d_out_all.reshape([batch_size, seq_in + out_n, itera, len(dim_used) // 3, 3])
+        p3d_out_all = p3d_out_all.reshape([batch_size, seq_in + out_n, 1, len(dim_used) // 3, 3])
 
         # 2d joint loss:
         grad_norm = 0

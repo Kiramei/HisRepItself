@@ -28,6 +28,7 @@ class Datasets(Dataset):
         self.p3d = {}
         self.data_idx = []
         seq_len = self.in_n + self.out_n
+        np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
         subs = np.array([[1, 6, 7, 8, 9], [11], [5]])
         # acts = data_utils.define_actions(actions)
         if actions is None:

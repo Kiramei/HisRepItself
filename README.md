@@ -69,23 +69,47 @@ Put the all downloaded datasets in ./datasets directory.
 ### Training
 All the running args are defined in [opt.py](utils/opt.py). We use following commands to train on different datasets and representations.
 To train,
+
+#### For 3d points Model,
+
+Short Term Model
 ```bash
-python main_h36m_3d.py --kernel_size 10 --dct_n 20 --input_n 50 --output_n 10 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66
+python main_h36m_3d.py  --kernel_size 10 --dct_n 20 --input_n 50 --output_n 10 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66
 ```
+Long Term Model
+```bash
+python main_h36m_3d.py  --kernel_size 10 --dct_n 35 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66
+```
+#### For angle Model,
+
+Short Term Model
 ```bash
 python main_h36m_ang.py --kernel_size 10 --dct_n 20 --input_n 50 --output_n 10 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 48
+```
+Long Term Model
+```bash
+python main_h36m_ang.py --kernel_size 10 --dct_n 35 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 48
 ```
 
 ### Evaluation
 To evaluate the pretrained model,
+#### For 3d points Model,
+Short Term Model
 ```bash
-python main_h36m_3d_eval.py --is_eval --kernel_size 10 --dct_n 20 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66 --ckpt ./checkpoint/pretrained/h36m_3d_in50_out10_dctn20/
+python main_h36m_3d_eval.py --is_eval --kernel_size 10 --dct_n 20 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66 --ckpt ./checkpoint/main_h36m_3d_in50_out10_ks10_dctn20
 ```
+Long Term Model
 ```bash
-python main_h36m_ang_eval.py --is_eval --kernel_size 10 --dct_n 20 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 48 --ckpt ./checkpoint/pretrained/h36m_ang_in50_out10_dctn20/
+python main_h36m_3d_eval.py --is_eval --kernel_size 10 --dct_n 35 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66 --ckpt ./checkpoint/main_h36m_3d_in50_out25_ks10_dctn35
 ```
+#### For angle Model,
+Short Term Model
 ```bash
-python main_amass_3d_eval.py --is_eval --kernel_size 10 --dct_n 35 --input_n 50 --output_n 25 --skip_rate 5 --batch_size 128 --test_batch_size 128 --in_features 54 --ckpt ./checkpoint/pretrained/amass_3d_in50_out25_dctn30/
+python main_h36m_ang_eval.py --is_eval --kernel_size 10 --dct_n 20 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66 --ckpt ./checkpoint/main_h36m_ang_in50_out10_ks10_dctn20
+```
+Long Term Model
+```bash
+python main_h36m_ang_eval.py --is_eval --kernel_size 10 --dct_n 35 --input_n 50 --output_n 25 --skip_rate 1 --batch_size 32 --test_batch_size 32 --in_features 66 --ckpt ./checkpoint/main_h36m_ang_in50_out25_ks10_dctn35
 ```
 
 
