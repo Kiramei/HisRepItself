@@ -69,6 +69,8 @@ def run_model(net_pred, optimizer=None, is_train=0, data_loader=None, epo=1, opt
     n = 0
     in_n = opt.input_n
     out_n = opt.output_n
+    dct_n = opt.dct_n
+
     dim_used = np.array([6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25,
                          26, 27, 28, 29, 30, 31, 32, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
                          46, 47, 51, 52, 53, 54, 55, 56, 57, 58, 59, 63, 64, 65, 66, 67, 68,
@@ -80,7 +82,7 @@ def run_model(net_pred, optimizer=None, is_train=0, data_loader=None, epo=1, opt
     joint_equal = np.array([13, 19, 22, 13, 27, 30])
     index_to_equal = np.concatenate((joint_equal * 3, joint_equal * 3 + 1, joint_equal * 3 + 2))
 
-    itera = 3 if out_n == 10 else 1
+    itera = 3 if dct_n == 20 else 1
     idx = np.expand_dims(np.arange(seq_in + out_n), axis=1) + (
             out_n - seq_in + np.expand_dims(np.arange(itera), axis=0))
     for i, (p3d_h36) in enumerate(data_loader):
@@ -97,9 +99,10 @@ def run_model(net_pred, optimizer=None, is_train=0, data_loader=None, epo=1, opt
         p3d_src = p3d_h36.clone()[:, :, dim_used]
         # p3d_src = p3d_src.permute(1, 0, 2)  # seq * n * dim
         # p3d_src = p3d_src[:in_n]
-        p3d_out_all = net_pred(p3d_src, input_n=in_n, output_n=out_n, itera=itera)
+        p3d_out_all = net_pred(p3d_src, input_n=in_n, output_n=10 if dct_n == 20 else 25, itera=itera)
 
-        p3d_out_all = p3d_out_all[:, seq_in:].transpose(1, 2).reshape([batch_size, out_n * itera, -1])[:, :out_n]
+        p3d_out_all = p3d_out_all[:, seq_in:].transpose(1, 2).reshape(
+            [batch_size, 10 * itera if dct_n == 20 else 25, -1])[:, :out_n]
 
         p3d_out = p3d_h36.clone()[:, in_n:in_n + out_n]
         p3d_out[:, :, dim_used] = p3d_out_all

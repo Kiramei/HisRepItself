@@ -71,12 +71,14 @@ def run_model(net_pred, optimizer=None, is_train=0, data_loader=None, epo=1, opt
     n = 0
     in_n = opt.input_n
     out_n = opt.output_n
+    dct_n = opt.dct_n
+
     dim_used = np.array([6, 7, 8, 9, 12, 13, 14, 15, 21, 22, 23, 24, 27, 28, 29, 30, 36, 37, 38, 39, 40, 41, 42,
                          43, 44, 45, 46, 47, 51, 52, 53, 54, 55, 56, 57, 60, 61, 62, 75, 76, 77, 78, 79, 80, 81, 84, 85,
                          86])
     seq_in = opt.kernel_size
 
-    itera = 3
+    itera = 3 if dct_n == 20 else 1
     idx = np.expand_dims(np.arange(seq_in + out_n), axis=1) + (
             out_n - seq_in + np.expand_dims(np.arange(itera), axis=0))
     for i, (ang_h36) in enumerate(data_loader):
@@ -92,9 +94,10 @@ def run_model(net_pred, optimizer=None, is_train=0, data_loader=None, epo=1, opt
         ang_src = ang_h36.clone()[:, :, dim_used]
         # ang_src = ang_src.permute(1, 0, 2)  # seq * n * dim
         # ang_src = ang_src[:in_n]
-        ang_out_all = net_pred(ang_src, output_n=10, dct_n=opt.dct_n,
+        ang_out_all = net_pred(ang_src, output_n= 10 if dct_n == 20 else 25,
                                itera=itera, input_n=in_n)
-        ang_out_all = ang_out_all[:, seq_in:].transpose(1, 2).reshape([batch_size, 10 * itera, -1])[:, :out_n]
+        ang_out_all = ang_out_all[:, seq_in:].transpose(1, 2).reshape(
+            [batch_size, (10 if dct_n == 20 else 25) * itera, -1])[:, :out_n]
         ang_out = ang_h36.clone()[:, in_n:in_n + out_n]
         ang_out[:, :, dim_used] = ang_out_all
 
